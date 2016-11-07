@@ -4,9 +4,21 @@ import {Link} from 'react-router';
 import {Paper, RefreshIndicator} from 'material-ui';
 
 import Dialog from './../dialog/Dialog';
+import {
+  Table,
+  TableBody,
+  TableRow,
+  TableHeaderColumn,
+  TableRowColumn,
+  RaisedButton,
+} from 'material-ui';
 
 const detailStyle = {
   padding: 15
+};
+const columnStyle = {
+  wordWrap: 'break-word',
+  whiteSpace: 'normal'
 };
 
 const loadingIndicatorStyle = {
@@ -14,7 +26,7 @@ const loadingIndicatorStyle = {
   position: 'relative'
 };
 
-class Table extends Component {
+class TableComponent extends Component {
 
   constructor(props) {
     super(props);
@@ -54,60 +66,78 @@ class Table extends Component {
     }
     return (
       <Paper style={detailStyle}>
-        <button onClick={this.handleOpenModal}>{'Add new ' + singular}</button>
+        <RaisedButton onClick={this.handleOpenModal}
+          label={'Add new ' + singular}
+          style={{margin: '8px 8px 8px 8px', marginRight: 'auto'}}
+          primary={true}
+        />
         <Dialog isOpen={this.state.openModal} action={this.state.actionModal}
           onRequestClose={this.handleCloseModal} schema={this.props.schema}
           onSubmit={this.handleSubmit}>
-          <button onClick={this.handleCloseModal}>Close</button>
+          <RaisedButton onClick={this.handleCloseModal}
+            label={'Close'}
+            style={{margin: '8px 8px 8px 8px', marginRight: 'auto'}}
+            primary={true}
+          />
         </Dialog>
-        <table>
-          <thead>
-            <tr>
+        <Table style={{tableLayout: 'auto'}}>
+          <TableBody displayRowCheckbox={false} showRowHover={true}>
+            <TableRow selectable={false}>
               {schema.propertiesOrder.map((item, index) => {
-                if (item === 'id' || item === 'tenant_id') {
+                const property = schema.properties[item];
+
+                if (property && property.view && !property.view.includes('list')) {
+                  return null;
+                }
+                if (item === 'id') {
                   return null;
                 }
                 return (
-                  <th key={index}>{schema.properties[item].title}</th>
+                  <TableHeaderColumn key={index}
+                    tooltip={property.description}
+                    style={columnStyle}>{property.title}</TableHeaderColumn>
                 );
               })}
-            </tr>
-          </thead>
-          <tbody>
+            </TableRow>
             {this.props.data.map((item, index) => (
-              <tr key={index}>
+              <TableRow key={index}>
                 {schema.propertiesOrder.map((key, i) => {
                   const data = item[key];
+                  const property = schema.properties[key];
 
-                  if (key === 'id' || key === 'tenant_id') {
+                  if (property && property.view && !property.view.includes('list')) {
+                    return null;
+                  }
+
+                  if (key === 'id') {
                     return null;
                   }
                   if (typeof data === 'object') {
                     return (
-                      <td key={i}>{JSON.stringify(data)}</td>
+                      <TableRowColumn key={i} style={columnStyle}>{JSON.stringify(data)}</TableRowColumn>
                     );
                   }
                   if (key === 'name') {
                     return (
-                      <td key={i}>
+                      <TableRowColumn key={i} style={columnStyle}>
                         <Link to={'/' + this.props.schema.singular + '/' + item.id}>{data}</Link>
-                      </td>
+                      </TableRowColumn>
                     );
                   }
                   return (
-                    <td key={i}>{data}</td>
+                    <TableRowColumn key={i} style={columnStyle}>{data}</TableRowColumn>
                   );
                 })}
-              </tr>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </Paper>
     );
   }
 }
 
-Table.contextTypes = {
+TableComponent.contextTypes = {
   router: PropTypes.object
 };
 
@@ -115,9 +145,9 @@ function mapStateToProps() {
   return {};
 }
 
-Table.propTypes = {
+TableComponent.propTypes = {
   schema: PropTypes.object.isRequired,
 };
 
 export default connect(mapStateToProps, {
-})(Table);
+})(TableComponent);
