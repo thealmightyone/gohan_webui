@@ -49,6 +49,7 @@ export default class TableView extends View {
     this.fragment = options.fragment;
     this.childview = options.childview;
     this.polling = options.polling;
+    this.updateSelfOnCollectionDiff = options.updateSelfOnCollectionDiff;
     if (options.pageLimit !== undefined) {
       this.collection.pageLimit = Number(options.pageLimit);
     }
@@ -101,7 +102,59 @@ export default class TableView extends View {
       this.activeSortFilter.by = this.collection.sortKey;
     }
 
-    this.listenTo(this.collection, 'update', this.render);
+    if (this.updateSelfOnCollectionDiff || this.childViews) {
+      this.collection.startLongPolling(6);
+      this.listenTo(this.collection, 'update', this.renderOnDiff);
+    } else {
+      this.listenTo(this.collection, 'update', this.render);
+    }
+
+  }
+  renderOnDiff() {
+    if (this.updateSelfOnCollectionDiff) {
+      this.newData = this.collection.map(model => {
+        const data = model.toJSON();
+        const result = Object.assign({}, data);
+
+        for (let key in data) {
+          result[key] = this.renderProperty(data, key);
+        }
+        return result;
+      });
+
+      if (this.oldData && JSON.stringify(this.newData) !== JSON.stringify(this.oldData)) {
+        this.render();
+      }
+      this.oldData = this.newData;
+    } else if (this.childViews) {
+      this.newData = this.collection.map(model => {
+        const data = model.toJSON();
+        const result = Object.assign({}, data);
+
+        for (let key in data) {
+          result[key] = this.renderProperty(data, key);
+        }
+        return result;
+      }).reduce((acc, val) => {
+        acc.push({
+          name: val.name,
+          description: val.description
+        });
+        return acc;
+      }, []);
+
+      if (this.oldData && JSON.stringify(this.newData) !== JSON.stringify(this.oldData)) {
+        console.log('change detedted');
+        this.render();
+      }
+
+      this.oldData = this.newData.map(device => {
+        return {
+          name: device.name,
+          description: device.description
+        };
+      });
+    }
   }
   searchByKey(event) {
     event.preventDefault();
@@ -436,6 +489,7 @@ export default class TableView extends View {
         isDeleting: model.isDeleting
       };
     });
+
     if (this.app && !this.childview) {
       this.app.router.changeTitle(this.schema.get('title'));
       const parents = [];
