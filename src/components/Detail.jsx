@@ -1,4 +1,8 @@
 import React, {Component, PropTypes} from 'react';
+import jsyaml from 'js-yaml';
+import CodeMirror from 'react-codemirror';
+import 'codemirror/mode/javascript/javascript';
+import 'codemirror/mode/yaml/yaml';
 
 export default class Detail extends Component {
   render() {
@@ -13,6 +17,20 @@ export default class Detail extends Component {
 
           if (property.view && !property.view.includes('detail')) {
             return null;
+          }
+
+          if (property.type === 'array' || property.type === 'object') {
+            return (
+              <div key={index}>
+                <CodeMirror value={jsyaml.safeDump(propertyValue)}
+                  options={{
+                    mode: 'yaml',
+                    lineNumbers: true,
+                    readOnly: true
+                  }}
+                />
+              </div>
+            );
           }
 
           return (

@@ -4,6 +4,7 @@ import {render} from 'react-dom';
 import {hashHistory} from 'react-router';
 
 import '../css/sass/main.scss';
+import '../css/codemirror.css';
 
 import Root from './app/Root';
 import createStore from './app/store';
